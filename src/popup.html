@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailToWith</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 12px;
+      width: 250px;
+    }
+    h3 {
+      text-align: center;
+      color: #333;
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      background-color: #0073e6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background-color: #005bb5;
+    }
+  </style>
+</head>
+<body>
+  <h3>MailToWith</h3>
+  <p style="text-align:center;">Manage Mailto Links</p>
+
+  <div class="popup-container">
+    <img src="../assets/icon48.png" alt="MailToWith Icon" class="logo">
+    <h2>MailToWith</h2>
+    <p class="subtitle">Simplify your mailto links</p>
+
+    <label for="provider" class="label">Default Mail Client</label>
+    <select id="provider" class="dropdown">
+      <option value="gmail">Gmail</option>
+      <option value="outlook">Outlook.com</option>
+      <option value="yahoo">Yahoo Mail</option>
+      <option value="protonmail">ProtonMail</option>
+    </select>
+
+    <button id="saveBtn" class="btn-primary">Save</button>
+    <p id="status" class="status"></p>
+
+    <footer>
+      <button id="openOptions" class="link-btn">Open Full Settings</button>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+
+  <style>
+  :root {
+    --background: #E7F0FF;
+    --primary: #5B4DB5;
+    --primary-hover: #49379B;
+    --text-dark: #333333;
+    --text-muted: #6C6C80;
+    --radius: 10px;
+    --font: 'JetBrains Mono', 'Inter', monospace;
+    --shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  body {
+    background-color: var(--background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    margin: 0;
+    padding: 20px;
+    width: 300px;
+    font-family: var(--font);
+    color: var(--text-dark);
+    text-align: center;
+  }
+
+    .popup-container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+
+    h2 {
+      margin: 4px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .label {
+      font-size: 13px;
+      margin-bottom: 4px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .dropdown {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: var(--radius);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      box-shadow: var(--shadow);
+      width: 100%;
+      margin: 10px 0;
+      transition: background 0.25s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      padding: 10px 16px;
+      font-size: 14px;
+      width: 100%;
+      margin-top: 8px;
+      box-shadow: none;
+      transition: all 0.25s ease;
+    }
+
+    .btn-outline:hover {
+      background-color: rgba(91,77,181,0.1);
+    }
+
+    .dropdown {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--text-dark);
+    }
+
+    footer {
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      height: 16px;
+    }
+  </style>
+</body>
+</html>

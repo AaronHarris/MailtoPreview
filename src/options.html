@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailToG - Options</title>
+  <style>
+  :root {
+    --background: #E7F0FF;
+    --primary: #5B4DB5;
+    --primary-hover: #49379B;
+    --accent: #E0218A;
+    --card-bg: #FFFFFF;
+    --border: #D4D7F5;
+    --text-dark: #333333;
+    --text-muted: #6C6C80;
+    --radius: 10px;
+    --shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    --font: 'JetBrains Mono', 'Inter', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background-color: var(--background);
+    color: var(--text-dark);
+    margin: 0;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  header img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,0.1));
+  }
+
+  header h1 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 22px;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  #newProfileForm {
+    max-width: 400px;
+    width: 100%;
+    background: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+
+  input[type=text] {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+
+  button {
+    font-family: var(--font);
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  #addProfileBtn {
+    background-color: var(--primary);
+    color: white;
+    padding: 12px;
+    border: none;
+    width: 100%;
+    letter-spacing: 0.02em;
+    box-shadow: var(--shadow);
+  }
+
+  #addProfileBtn:hover {
+    background-color: var(--primary-hover);
+  }
+
+  #restoreBtn {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    margin-top: 30px;
+    padding: 10px 16px;
+    box-shadow: none;
+  }
+
+  #restoreBtn:hover {
+    background-color: rgba(91,77,181,0.1);
+  }
+
+  #profilesContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    justify-items: center;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .profile-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .profile-header {
+    font-weight: 700;
+    color: var(--text-dark);
+    font-size: 16px;
+  }
+
+  .template-field {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    word-break: break-all;
+  }
+
+  .profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .profile-actions button {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+  }
+
+  .profile-actions .edit-btn {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  .profile-actions .edit-btn:hover {
+    background-color: var(--primary-hover);
+  }
+
+  .profile-actions .delete-btn {
+    background-color: var(--accent);
+    color: white;
+  }
+
+  .profile-actions .delete-btn:hover {
+    background-color: #be166b;
+  }
+
+    h1 {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    #profilesContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .profile-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .profile-header {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+
+    .template-field {
+      font-size: 13px;
+      color: var(--text-light);
+      word-break: break-all;
+    }
+
+    .profile-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: background 0.25s ease;
+      box-shadow: var(--shadow);
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    button.danger {
+      background: #d9534f;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    button.secondary:hover {
+      background-color: rgba(91,77,181,0.1);
+    }
+
+    #addProfileBtn, #restoreBtn {
+      margin: 20px 5px;
+      padding: 10px 16px;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 15px;
+      color: green;
+      font-weight: bold;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    input[type=text] {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    #newProfileForm {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <img src="../assets/icon128.png" alt="MailToWith" />
+    <h1>MailToWith</h1>
+    <p>MailTo Links PowerUp</p>
+  </header>
+
+  <div id="newProfileForm">
+    <input type="text" id="profileName" placeholder="Profile Name" />
+    <input type="text" id="profileTemplate" placeholder="Template" />
+    <button id="addProfileBtn">Save</button>
+  </div>
+
+  <div id="profilesContainer">
+    <!-- Profiles dynamically loaded here -->
+  </div>
+
+  <button id="restoreBtn">Restore defaults</button>
+
+  <script src="options.js"></script>
+</body>
+</html>

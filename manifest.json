@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "MailToWith - WebMail Handler",
+  "description": "Manage mailto: links across the web and redirect them to your preferred webmail client.",
+  "version": "1.0.0",
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "contextMenus"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "options_page": "src/options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_title": "MailToWith",
+    "default_popup": "src/popup.html"
+  },
+  "host_permissions": [
+    "*://mail.google.com/*",
+    "*://outlook.live.com/*",
+    "*://mail.yahoo.com/*",
+    "*://mail.proton.me/*"
+  ]
+}
