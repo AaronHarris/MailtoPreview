@@ -27,16 +27,82 @@ async function getSelectedMailService() {
   });
 }
 
+/**
+ * Parse a mailto URL into structured W3C-compliant fields following RFC 5322 and MIME standards.
+ * Supports percent-encoding, UTF-8, and encoded-word decoding (RFC 2047).
+ */
 function parseMailtoData(mailto) {
-  const [toPart, query] = mailto.replace('mailto:', '').split('?');
-  const params = new URLSearchParams(query);
+  const [toPart, query] = mailto.replace(/^mailto:/i, '').split('?');
+  const params = new URLSearchParams(query || '');
+
+  // Basic mail fields
+  const from = ''; // Typically not included in mailto but reserved for schema consistency
+  const to = toPart ? decodeURIComponent(toPart) : '';
+  const cc = decodeURIComponent(params.get('cc') || '');
+  const bcc = decodeURIComponent(params.get('bcc') || '');
+
+  // Subject & body decoding
+  const subject = decodeMIMEHeader(params.get('subject'));
+  const bodyContent = decodeMIMEBody(params.get('body'));
+
+  // Return structured JSON schema
   return {
-    to: toPart || '',
-    cc: params.get('cc') || '',
-    bcc: params.get('bcc') || '',
-    subject: params.get('subject') || '',
-    body: params.get('body') || ''
+    from,
+    to: to.split(',').map(addr => addr.trim()).filter(Boolean),
+    cc: cc.split(',').map(addr => addr.trim()).filter(Boolean),
+    bcc: bcc.split(',').map(addr => addr.trim()).filter(Boolean),
+    subject,
+    body: {
+      contentType: 'text/plain',
+      charset: 'utf-8',
+      content: bodyContent
+    },
+    attachments: [],
   };
+}
+
+/**
+ * Decode MIME-encoded header fields like "=?UTF-8?B?...?=" according to RFC 2047.
+ */
+function decodeMIMEHeader(value) {
+  if (!value) return '';
+  const decoded = value.replace(/=\?([^?]+)\?(B|Q)\?([^?]*)\?=/gi, (_, charset, encoding, text) => {
+    try {
+      if (encoding.toUpperCase() === 'B') {
+        const binary = atob(text.replace(/\s/g, ''));
+        return new TextDecoder(charset).decode(Uint8Array.from(binary, c => c.charCodeAt(0)));
+      }
+      if (encoding.toUpperCase() === 'Q') {
+        const decodedText = text.replace(/_/g, ' ').replace(/=([A-F0-9]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        return new TextDecoder(charset).decode(new TextEncoder().encode(decodedText));
+      }
+    } catch {
+      return value;
+    }
+    return value;
+  });
+  return decodeURIComponentSafe(decoded);
+}
+
+/**
+ * Decode body text safely using W3C-compliant TextDecoder and URI decoding.
+ */
+function decodeMIMEBody(text) {
+  if (!text) return '';
+  try {
+    const decoded = decodeURIComponentSafe(text);
+    return new TextDecoder('utf-8', { fatal: false }).decode(new TextEncoder().encode(decoded));
+  } catch {
+    return text;
+  }
+}
+
+function decodeURIComponentSafe(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function buildComposeURL(service, data, custom) {
@@ -105,7 +171,7 @@ chrome.runtime.onInstalled.addListener(async () => {
           chrome.contextMenus.create({
             id: `mailto-custom-${key}`,
             parentId: 'rootMailToWith',
-            title: `Custom: ${key}`,
+            title: `${key}`,
             contexts: ['link'],
             targetUrlPatterns: ['mailto:*']
           });

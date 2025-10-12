@@ -3,8 +3,7 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
   const providerSelect = document.getElementById('provider');
-  const saveBtn = document.getElementById('saveBtn');
-  const openOptions = document.getElementById('openOptions');
+  const openProfiles = document.getElementById('openOptions');
   const status = document.getElementById('status');
 
   const defaultProfiles = {
@@ -46,16 +45,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await populateProfilesDropdown();
 
-  // Save selected profile
-  saveBtn.addEventListener('click', async () => {
+  // Auto-save selected profile when changed
+  providerSelect.addEventListener('change', async () => {
     const selectedService = providerSelect.value;
     await chrome.storage.sync.set({ selectedService });
     status.textContent = 'Saved ✓';
     setTimeout(() => status.textContent = '', 2000);
   });
 
-  // Open full Options page
-  openOptions.addEventListener('click', () => {
+  // Open Email Profiles (full Options page)
+  openProfiles.addEventListener('click', () => {
     if (chrome.runtime.openOptionsPage) {
       chrome.runtime.openOptionsPage();
     } else {
