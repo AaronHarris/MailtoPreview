@@ -10,17 +10,24 @@ const saveBtn = document.getElementById('saveProfileBtn');
 const cancelModal = document.getElementById('cancelModalBtn');
 
 const defaultProfiles = {
-  "Gmail": "https://mail.google.com/mail/?view=cm&fs=1&to={{to}}&su={{subject}}&body={{body}}",
-  "Outlook": "https://outlook.live.com/owa/?path=/mail/action/compose&to={{to}}&subject={{subject}}&body={{body}}",
-  "Yahoo": "https://compose.mail.yahoo.com/?to={{to}}&subject={{subject}}&body={{body}}",
-  "ProtonMail": "https://mail.proton.me/u/0/inbox?to={{to}}&subject={{subject}}&body={{body}}"
+  "gmail": "https://mail.google.com/mail/?view=cm&fs=1&to={{to}}&cc={{cc}}&bcc={{bcc}}&su={{subject}}&body={{body}}",
+  "outlook": "https://outlook.live.com/mail/0/deeplink/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}",
+  "yahoo": "https://compose.mail.yahoo.com/?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}",
+  "protonmail": "https://mail.proton.me/u/0/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}"
 };
 
 let editingProfile = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const data = await chrome.storage.sync.get('profiles');
-  renderProfiles(data.profiles || defaultProfiles);
+  let profiles = data.profiles || {};
+  
+  // If no profiles in storage, use default profiles
+  if (Object.keys(profiles).length === 0) {
+    profiles = defaultProfiles;
+  }
+  
+  renderProfiles(profiles);
 });
 
 function renderProfiles(profiles) {
@@ -29,7 +36,9 @@ function renderProfiles(profiles) {
   const addCard = document.createElement('div');
   addCard.className = 'profile-card add-card';
   addCard.innerHTML = `
-    <div class="add-icon">📧</div>
+    <div class="add-icon" style="display: flex; justify-content: center; align-items: center;">
+      <img src="../assets/Letter.svg" alt="Add Icon" style="width: 80px; height: 80px;" />
+    </div>
     <p class="add-label">Add New Profile</p>`;
   addCard.addEventListener('click', () => openModal());
   container.appendChild(addCard);
@@ -38,8 +47,18 @@ function renderProfiles(profiles) {
     const card = document.createElement('div');
     card.className = 'profile-card';
 
+    // Display name mapping for default services
+    const displayNames = {
+      'gmail': 'Gmail',
+      'outlook': 'Outlook',
+      'yahoo': 'Yahoo Mail',
+      'protonmail': 'ProtonMail'
+    };
+    
+    const displayName = displayNames[name] || name;
+
     card.innerHTML = `
-      <strong>${name}</strong>
+      <strong>${displayName}</strong>
       <p class="template">${template}</p>
       <div class="actions">
         <button class="edit-btn">Edit</button>
@@ -99,6 +118,9 @@ async function deleteProfile(name) {
 }
 
 restoreBtn.addEventListener('click', async () => {
-  await chrome.storage.sync.set({ profiles: { ...defaultProfiles } });
-  renderProfiles(defaultProfiles);
+  if (confirm('This will replace all current profiles with the default ones. Continue?')) {
+    await chrome.storage.sync.set({ profiles: { ...defaultProfiles } });
+    renderProfiles(defaultProfiles);
+    console.log('MailToWith: Default profiles restored');
+  }
 });

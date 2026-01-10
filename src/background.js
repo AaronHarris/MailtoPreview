@@ -8,21 +8,31 @@ const TEMPLATES = {
   protonmail: 'https://mail.proton.me/u/0/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}'
 };
 
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === 'mailto') {
-    port.onMessage.addListener((message) => {
-      if (message.type === 'MAILTO_CLICK') {
-        handleMailtoClick(message.mailto);
-      }
-    });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'MAILTO_CLICK' && message.mailto) {
+    handleMailtoClick(message.mailto);
   }
 });
 
 async function getSelectedMailService() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['selectedService', 'customServices'], (data) => {
+    chrome.storage.sync.get(['selectedService', 'profiles'], (data) => {
       const service = data.selectedService || 'gmail';
-      resolve({ service, customServices: data.customServices || {} });
+      
+      // If no profiles in storage, use the hardcoded TEMPLATES as fallback
+      let customServices = data.profiles || {};
+      
+      // If storage is empty, populate with default templates
+      if (Object.keys(customServices).length === 0) {
+        customServices = {
+          "gmail": TEMPLATES.gmail,
+          "outlook": TEMPLATES.outlook,
+          "yahoo": TEMPLATES.yahoo,
+          "protonmail": TEMPLATES.protonmail
+        };
+      }
+      
+      resolve({ service, customServices });
     });
   });
 }
@@ -106,13 +116,26 @@ function decodeURIComponentSafe(value) {
 }
 
 function buildComposeURL(service, data, custom) {
-  const template = custom?.[service] || TEMPLATES[service] || TEMPLATES.gmail;
+  // Case-insensitive lookup for custom profiles
+  const customTemplate = Object.keys(custom || {}).find(key =>
+    key.toLowerCase() === service.toLowerCase()
+  ) ? custom[Object.keys(custom).find(key => key.toLowerCase() === service.toLowerCase())] : null;
+  
+  const template = customTemplate || TEMPLATES[service] || TEMPLATES.gmail;
+  
+  // Convert arrays to comma-separated strings for URL encoding
+  const toStr = Array.isArray(data.to) ? data.to.join(',') : (data.to || '');
+  const ccStr = Array.isArray(data.cc) ? data.cc.join(',') : (data.cc || '');
+  const bccStr = Array.isArray(data.bcc) ? data.bcc.join(',') : (data.bcc || '');
+  const subjectStr = data.subject || '';
+  const bodyStr = data.body?.content || data.body || '';
+  
   return template
-    .replace('{{to}}', encodeURIComponent(data.to))
-    .replace('{{cc}}', encodeURIComponent(data.cc))
-    .replace('{{bcc}}', encodeURIComponent(data.bcc))
-    .replace('{{subject}}', encodeURIComponent(data.subject))
-    .replace('{{body}}', encodeURIComponent(data.body));
+    .replace('{{to}}', encodeURIComponent(toStr))
+    .replace('{{cc}}', encodeURIComponent(ccStr))
+    .replace('{{bcc}}', encodeURIComponent(bccStr))
+    .replace('{{subject}}', encodeURIComponent(subjectStr))
+    .replace('{{body}}', encodeURIComponent(bodyStr));
 }
 
 async function handleMailtoClick(mailto) {
@@ -124,61 +147,151 @@ async function handleMailtoClick(mailto) {
   try {
     const data = parseMailtoData(mailto);
     const { service, customServices } = await getSelectedMailService();
-    const url = buildComposeURL(service, data, customServices);
+    const normalizedService = service.toLowerCase().trim();
+    const url = buildComposeURL(normalizedService, data, customServices);
     await chrome.tabs.create({ url });
   } catch (error) {
     console.error('MailToWith: failed to handle mailto click', error);
   }
 }
 
-// Initialize default values when first installed
-chrome.runtime.onInstalled.addListener(async () => {
-  chrome.storage.sync.get(['selectedService', 'customServices'], async (data) => {
-    if (!data.selectedService) {
-      chrome.storage.sync.set({
-        selectedService: 'gmail',
-        customServices: {},
-        version: '1.0.0'
-      });
-    }
+// Debounce mechanism for context menu updates
+let contextMenuUpdateTimeout = null;
 
-    // Remove old menu items to prevent duplication
-    chrome.contextMenus.removeAll(() => {
-      // Root menu
-      chrome.contextMenus.create({
-        id: 'rootMailToWith',
-        title: 'Open in MailToWith',
-        contexts: ['link'],
-        targetUrlPatterns: ['mailto:*']
-      });
-
-      const services = ['gmail', 'outlook', 'yahoo', 'protonmail'];
-      const customServices = data.customServices || {};
-
-      // Create submenu entries for default and custom providers
-      for (const service of services) {
-        chrome.contextMenus.create({
-          id: `mailto-${service}`,
-          parentId: 'rootMailToWith',
-          title: service.charAt(0).toUpperCase() + service.slice(1),
-          contexts: ['link'],
-          targetUrlPatterns: ['mailto:*']
-        });
+// Function to create/update context menus
+async function updateContextMenus() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(['profiles'], (data) => {
+      let customServices = data.profiles || {};
+      
+      // If storage is empty, use hardcoded templates as fallback
+      if (Object.keys(customServices).length === 0) {
+        customServices = {
+          "gmail": TEMPLATES.gmail,
+          "outlook": TEMPLATES.outlook,
+          "yahoo": TEMPLATES.yahoo,
+          "protonmail": TEMPLATES.protonmail
+        };
       }
-
-      if (customServices && Object.keys(customServices).length > 0) {
-        for (const key of Object.keys(customServices)) {
+      
+      // Remove all existing menu items to prevent duplication
+      chrome.contextMenus.removeAll(() => {
+        try {
+          // Root menu
           chrome.contextMenus.create({
-            id: `mailto-custom-${key}`,
-            parentId: 'rootMailToWith',
-            title: `${key}`,
+            id: 'rootMailToWith',
+            title: 'Open in MailToWith',
             contexts: ['link'],
             targetUrlPatterns: ['mailto:*']
+          }, () => {
+            if (chrome.runtime.lastError) {
+              console.warn('MailToWith: Error creating root menu:', chrome.runtime.lastError.message);
+            }
           });
+
+          // Create submenu entries for all available providers
+          const defaultServices = ['gmail', 'outlook', 'yahoo', 'protonmail'];
+          const displayNames = {
+            'gmail': 'Gmail',
+            'outlook': 'Outlook',
+            'yahoo': 'Yahoo Mail',
+            'protonmail': 'ProtonMail'
+          };
+
+          // Create entries for all services (default and custom)
+          for (const [key, template] of Object.entries(customServices)) {
+            const isDefault = defaultServices.includes(key.toLowerCase());
+            const menuId = isDefault ? `mailto-${key}` : `mailto-custom-${key}`;
+            const displayName = displayNames[key.toLowerCase()] || key;
+            
+            chrome.contextMenus.create({
+              id: menuId,
+              parentId: 'rootMailToWith',
+              title: displayName,
+              contexts: ['link'],
+              targetUrlPatterns: ['mailto:*']
+            }, () => {
+              if (chrome.runtime.lastError) {
+                console.warn(`MailToWith: Error creating menu for ${key}:`, chrome.runtime.lastError.message);
+              }
+            });
+          }
+          
+          resolve();
+        } catch (error) {
+          console.error('MailToWith: Error in updateContextMenus:', error);
+          reject(error);
         }
-      }
+      });
     });
   });
+}
+
+// Initialize default values when first installed
+chrome.runtime.onInstalled.addListener(async () => {
+  try {
+    const data = await chrome.storage.sync.get(['selectedService', 'profiles']);
+    
+    // Default profiles that match the TEMPLATES constant
+    const defaultProfiles = {
+      "gmail": "https://mail.google.com/mail/?view=cm&fs=1&to={{to}}&cc={{cc}}&bcc={{bcc}}&su={{subject}}&body={{body}}",
+      "outlook": "https://outlook.live.com/mail/0/deeplink/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}",
+      "yahoo": "https://compose.mail.yahoo.com/?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}",
+      "protonmail": "https://mail.proton.me/u/0/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}"
+    };
+    
+    // Initialize storage with defaults if not already set
+    const updates = {};
+    
+    if (!data.selectedService) {
+      updates.selectedService = 'gmail';
+    }
+    
+    if (!data.profiles || Object.keys(data.profiles).length === 0) {
+      updates.profiles = defaultProfiles;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      updates.version = '1.0.0';
+      await chrome.storage.sync.set(updates);
+      console.log('MailToWith: Default profiles initialized in storage');
+    }
+    
+    // Create initial context menus
+    await updateContextMenus();
+    console.log('MailToWith: Extension installed and context menus created');
+  } catch (error) {
+    console.error('MailToWith: Error during installation:', error);
+  }
+});
+
+// Handle extension startup (when Chrome starts)
+chrome.runtime.onStartup.addListener(async () => {
+  try {
+    await updateContextMenus();
+    console.log('MailToWith: Extension started and context menus created');
+  } catch (error) {
+    console.error('MailToWith: Error during startup:', error);
+  }
+});
+
+// Listen for storage changes to update context menus when profiles change
+chrome.storage.onChanged.addListener(async (changes, area) => {
+  if (area === 'sync' && changes.profiles) {
+    // Debounce context menu updates to prevent rapid successive calls
+    if (contextMenuUpdateTimeout) {
+      clearTimeout(contextMenuUpdateTimeout);
+    }
+    
+    contextMenuUpdateTimeout = setTimeout(async () => {
+      try {
+        await updateContextMenus();
+        console.log('MailToWith: Context menus updated after profile changes');
+      } catch (error) {
+        console.error('MailToWith: Failed to update context menus:', error);
+      }
+    }, 300); // 300ms debounce
+  }
 });
 
 // Listener for context menu click on mailto links

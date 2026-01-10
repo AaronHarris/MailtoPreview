@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "MailToWith - WebMail Handler",
   "description": "Manage mailto: links across the web and redirect them to your preferred webmail client.",
-  "version": "1.0.0",
+  "version": "1.2.1",
   "icons": {
     "16": "assets/icon16.png",
     "48": "assets/icon48.png",

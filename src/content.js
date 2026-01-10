@@ -1,22 +1,28 @@
 // MailToWith - Content Script
 // Intercepts clicks on mailto links and sends them to the background script
 
-const port = chrome.runtime.connect({ name: 'mailto' });
+chrome.runtime.onMessage; // marker line placeholder, we replace persistent port
 
 function interceptMailtoLinks() {
   const mailtoLinks = document.querySelectorAll('a[href^="mailto:"]');
   for (const link of mailtoLinks) {
     if (!link.dataset.mailtowithBound) {
       link.dataset.mailtowithBound = 'true';
-      link.addEventListener('click', (event) => {
+      link.addEventListener('click', async (event) => {
         event.preventDefault();
         const href = link.getAttribute('href');
         try {
-          port.postMessage({ type: 'MAILTO_CLICK', mailto: href });
-        } catch (err) {
-          console.warn('MailToWith: unable to send message - reconnecting');
-          const newPort = chrome.runtime.connect({ name: 'mailto' });
-          newPort.postMessage({ type: 'MAILTO_CLICK', mailto: href });
+          // Verify that the extension context is still valid before messaging
+          if (chrome?.runtime?.id) {
+            await chrome.runtime.sendMessage({ type: 'MAILTO_CLICK', mailto: href });
+          } else {
+            console.warn('MailToWith: Extension context invalidated (no runtime id), opening directly.');
+            window.open(href, '_blank');
+          }
+        } catch (error) {
+          console.warn('MailToWith: Extension context invalidated, reloading extension...', error);
+          // Graceful fallback when background is terminated or reloaded
+          window.open(href, '_blank');
         }
       });
     }

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailTo Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+        .test-link:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <h1>MailTo Link Test Page</h1>
+    <p>Right-click on any of these mailto links to test the MailToWith extension context menu:</p>
+    
+    <a href="mailto:test@example.com" class="test-link">
+        Simple Email: test@example.com
+    </a>
+    
+    <a href="mailto:contact@company.com?subject=Hello%20World&body=This%20is%20a%20test%20message" class="test-link">
+        Email with Subject and Body
+    </a>
+    
+    <a href="mailto:support@service.com?cc=manager@service.com&bcc=admin@service.com&subject=Support%20Request&body=Please%20help%20with..." class="test-link">
+        Email with CC, BCC, Subject and Body
+    </a>
+    
+    <a href="mailto:info@test.org?subject=Test%20Subject%20with%20Special%20Characters%20%C3%A9%C3%A0%C3%BC" class="test-link">
+        Email with Unicode Characters in Subject
+    </a>
+</body>
+</html>

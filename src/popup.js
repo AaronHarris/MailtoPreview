@@ -7,21 +7,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   const status = document.getElementById('status');
 
   const defaultProfiles = {
-    "Gmail": "https://mail.google.com/mail/?view=cm&fs=1&to={{to}}&su={{subject}}&body={{body}}",
-    "Outlook": "https://outlook.live.com/owa/?path=/mail/action/compose&to={{to}}&subject={{subject}}&body={{body}}",
-    "Yahoo": "https://compose.mail.yahoo.com/?to={{to}}&subject={{subject}}&body={{body}}",
-    "ProtonMail": "https://mail.proton.me/u/0/inbox?to={{to}}&subject={{subject}}&body={{body}}"
+    "gmail": "https://mail.google.com/mail/?view=cm&fs=1&to={{to}}&cc={{cc}}&bcc={{bcc}}&su={{subject}}&body={{body}}",
+    "outlook": "https://outlook.live.com/mail/0/deeplink/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}",
+    "yahoo": "https://compose.mail.yahoo.com/?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}",
+    "protonmail": "https://mail.proton.me/u/0/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}"
   };
 
   async function populateProfilesDropdown() {
     const data = await chrome.storage.sync.get(['profiles', 'selectedService']);
-    const profiles = data.profiles || defaultProfiles;
+    let profiles = data.profiles || {};
+    
+    // If no profiles in storage, use default profiles
+    if (Object.keys(profiles).length === 0) {
+      profiles = defaultProfiles;
+    }
+
+    // Display name mapping for default services
+    const displayNames = {
+      'gmail': 'Gmail',
+      'outlook': 'Outlook',
+      'yahoo': 'Yahoo Mail',
+      'protonmail': 'ProtonMail'
+    };
 
     providerSelect.innerHTML = '';
     for (const name in profiles) {
       const option = document.createElement('option');
       option.value = name;
-      option.textContent = name;
+      option.textContent = displayNames[name] || name;
       providerSelect.appendChild(option);
     }
 
