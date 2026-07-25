@@ -1,16 +1,22 @@
-﻿// MailToWith - Background Service Worker
-// Opens a compose preview window for mailto links, then hands off to the chosen webmail client
+// MailToWith - Background Service Worker
+// Handles mailto link redirect to chosen webmail client
 
-import { TEMPLATES, parseMailtoData, buildComposeURL } from './mailto.js';
-
-const PREVIEW_SIZE = { width: 760, height: 780 };
+const TEMPLATES = {
+  gmail: 'https://mail.google.com/mail/?view=cm&fs=1&to={{to}}&cc={{cc}}&bcc={{bcc}}&su={{subject}}&body={{body}}',
+  outlook: 'https://outlook.live.com/mail/0/deeplink/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}',
+  yahoo: 'https://compose.mail.yahoo.com/?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}',
+  protonmail: 'https://mail.proton.me/u/0/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}'
+};
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'MAILTO_CLICK' && message.mailto) {
     openPreviewWindow(message.mailto);
   }
+  if (message.type === 'PARSE_MAILTO' && message.mailto) {
+    sendResponse(parseMailtoData(message.mailto));
+  }
   if (message.type === 'OPEN_COMPOSE' && message.mailto) {
-    openCompose(message.service, message.mailto, sender.tab?.windowId);
+    handleMailtoClick(message.mailto, message.service);
   }
 });
 
@@ -37,7 +43,108 @@ async function getSelectedMailService() {
   });
 }
 
-/** Open the compose preview popup for a mailto link. */
+/**
+ * Parse a mailto URL into structured W3C-compliant fields following RFC 5322 and MIME standards.
+ * Supports percent-encoding, UTF-8, and encoded-word decoding (RFC 2047).
+ */
+function parseMailtoData(mailto) {
+  const [toPart, query] = mailto.replace(/^mailto:/i, '').split('?');
+  const params = new URLSearchParams(query || '');
+
+  // Basic mail fields
+  const from = ''; // Typically not included in mailto but reserved for schema consistency
+  const to = toPart ? decodeURIComponent(toPart) : '';
+  const cc = decodeURIComponent(params.get('cc') || '');
+  const bcc = decodeURIComponent(params.get('bcc') || '');
+
+  // Subject & body decoding
+  const subject = decodeMIMEHeader(params.get('subject'));
+  const bodyContent = decodeMIMEBody(params.get('body'));
+
+  // Return structured JSON schema
+  return {
+    from,
+    to: to.split(',').map(addr => addr.trim()).filter(Boolean),
+    cc: cc.split(',').map(addr => addr.trim()).filter(Boolean),
+    bcc: bcc.split(',').map(addr => addr.trim()).filter(Boolean),
+    subject,
+    body: {
+      contentType: 'text/plain',
+      charset: 'utf-8',
+      content: bodyContent
+    },
+    attachments: [],
+  };
+}
+
+/**
+ * Decode MIME-encoded header fields like "=?UTF-8?B?...?=" according to RFC 2047.
+ */
+function decodeMIMEHeader(value) {
+  if (!value) return '';
+  const decoded = value.replace(/=\?([^?]+)\?(B|Q)\?([^?]*)\?=/gi, (_, charset, encoding, text) => {
+    try {
+      if (encoding.toUpperCase() === 'B') {
+        const binary = atob(text.replace(/\s/g, ''));
+        return new TextDecoder(charset).decode(Uint8Array.from(binary, c => c.charCodeAt(0)));
+      }
+      if (encoding.toUpperCase() === 'Q') {
+        const decodedText = text.replace(/_/g, ' ').replace(/=([A-F0-9]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        return new TextDecoder(charset).decode(new TextEncoder().encode(decodedText));
+      }
+    } catch {
+      return value;
+    }
+    return value;
+  });
+  return decodeURIComponentSafe(decoded);
+}
+
+/**
+ * Decode body text safely using W3C-compliant TextDecoder and URI decoding.
+ */
+function decodeMIMEBody(text) {
+  if (!text) return '';
+  try {
+    const decoded = decodeURIComponentSafe(text);
+    return new TextDecoder('utf-8', { fatal: false }).decode(new TextEncoder().encode(decoded));
+  } catch {
+    return text;
+  }
+}
+
+function decodeURIComponentSafe(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function buildComposeURL(service, data, custom) {
+  // Case-insensitive lookup for custom profiles
+  const customTemplate = Object.keys(custom || {}).find(key =>
+    key.toLowerCase() === service.toLowerCase()
+  ) ? custom[Object.keys(custom).find(key => key.toLowerCase() === service.toLowerCase())] : null;
+  
+  const template = customTemplate || TEMPLATES[service] || TEMPLATES.gmail;
+  
+  // Convert arrays to comma-separated strings for URL encoding
+  const toStr = Array.isArray(data.to) ? data.to.join(',') : (data.to || '');
+  const ccStr = Array.isArray(data.cc) ? data.cc.join(',') : (data.cc || '');
+  const bccStr = Array.isArray(data.bcc) ? data.bcc.join(',') : (data.bcc || '');
+  const subjectStr = data.subject || '';
+  const bodyStr = data.body?.content || data.body || '';
+  
+  return template
+    .replace('{{to}}', encodeURIComponent(toStr))
+    .replace('{{cc}}', encodeURIComponent(ccStr))
+    .replace('{{bcc}}', encodeURIComponent(bccStr))
+    .replace('{{subject}}', encodeURIComponent(subjectStr))
+    .replace('{{body}}', encodeURIComponent(bodyStr));
+}
+
+// Show the mailto contents in a preview window instead of jumping straight to webmail
 async function openPreviewWindow(mailto) {
   if (!mailto || typeof mailto !== 'string' || !mailto.startsWith('mailto:')) {
     console.warn('MailToWith: invalid mailto message received', mailto);
@@ -48,28 +155,30 @@ async function openPreviewWindow(mailto) {
     await chrome.windows.create({
       url: chrome.runtime.getURL(`src/preview.html?mailto=${encodeURIComponent(mailto)}`),
       type: 'popup',
-      width: PREVIEW_SIZE.width,
-      height: PREVIEW_SIZE.height
+      width: 720,
+      height: 720
     });
   } catch (error) {
     console.error('MailToWith: failed to open preview window', error);
   }
 }
 
-/** Hand the previewed message off to a webmail client, then close the preview. */
-async function openCompose(service, mailto, previewWindowId) {
+async function handleMailtoClick(mailto, chosenService) {
+  if (!mailto || typeof mailto !== 'string' || !mailto.startsWith('mailto:')) {
+    console.warn('MailToWith: invalid mailto message received', mailto);
+    return;
+  }
+
   try {
     const data = parseMailtoData(mailto);
-    const { service: defaultService, customServices } = await getSelectedMailService();
-    const url = buildComposeURL((service || defaultService).toLowerCase().trim(), data, customServices);
+    const { service, customServices } = await getSelectedMailService();
+    const normalizedService = (chosenService || service).toLowerCase().trim();
+    const url = buildComposeURL(normalizedService, data, customServices);
     await chrome.tabs.create({ url });
-    // The preview usually closes itself; this is the fallback if it could not
-    if (previewWindowId) await chrome.windows.remove(previewWindowId).catch(() => {});
   } catch (error) {
-    console.error('MailToWith: failed to open compose window', error);
+    console.error('MailToWith: failed to handle mailto click', error);
   }
 }
-
 
 // Debounce mechanism for context menu updates
 let contextMenuUpdateTimeout = null;
