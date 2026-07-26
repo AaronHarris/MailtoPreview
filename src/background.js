@@ -8,19 +8,27 @@ const TEMPLATES = {
   protonmail: 'https://mail.proton.me/u/0/compose?to={{to}}&cc={{cc}}&bcc={{bcc}}&subject={{subject}}&body={{body}}'
 };
 
+const displayNames = {
+  'gmail': 'Gmail',
+  'outlook': 'Outlook',
+  'yahoo': 'Yahoo Mail',
+  'protonmail': 'ProtonMail'
+};
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'MAILTO_CLICK' && message.mailto) {
-    // The preview window can be turned off from the options page
-    chrome.storage.sync.get({ previewEnabled: true }, (data) => {
-      data.previewEnabled ? openPreviewWindow(message.mailto) : handleMailtoClick(message.mailto);
+    // The preview window can be turned off on the options page
+    chrome.storage.sync.get({ previewEnabled: true }, ({ previewEnabled }) => {
+      if (previewEnabled) openPreviewWindow(message.mailto);
+      else handleMailtoClick(message.mailto);
     });
   }
-  if (message.type === 'PARSE_MAILTO' && message.mailto) {
-    sendResponse(parseMailtoData(message.mailto));
-  }
-  if (message.type === 'GET_SERVICES') {
-    getSelectedMailService().then(sendResponse);
-    return true; // keep the channel open for the async response
+  if (message.type === 'PREVIEW_DATA' && message.mailto) {
+    // Everything the preview window needs to draw itself
+    getSelectedMailService().then(({ service, customServices }) => {
+      sendResponse({ data: parseMailtoData(message.mailto), service, profiles: customServices, displayNames });
+    });
+    return true; // the response is sent asynchronously
   }
   if (message.type === 'OPEN_COMPOSE' && message.mailto) {
     handleMailtoClick(message.mailto, message.service);
@@ -153,11 +161,6 @@ function buildComposeURL(service, data, custom) {
 
 // Show the mailto contents in a preview window instead of jumping straight to webmail
 async function openPreviewWindow(mailto) {
-  if (!mailto || typeof mailto !== 'string' || !mailto.startsWith('mailto:')) {
-    console.warn('MailToWith: invalid mailto message received', mailto);
-    return;
-  }
-
   try {
     await chrome.windows.create({
       url: chrome.runtime.getURL(`src/preview.html?mailto=${encodeURIComponent(mailto)}`),
@@ -223,12 +226,6 @@ async function updateContextMenus() {
 
           // Create submenu entries for all available providers
           const defaultServices = ['gmail', 'outlook', 'yahoo', 'protonmail'];
-          const displayNames = {
-            'gmail': 'Gmail',
-            'outlook': 'Outlook',
-            'yahoo': 'Yahoo Mail',
-            'protonmail': 'ProtonMail'
-          };
 
           // Create entries for all services (default and custom)
           for (const [key, template] of Object.entries(customServices)) {

@@ -1,22 +1,21 @@
 // MailToWith - Compose Preview Window
-// Previews a mailto: link, then opens it in a webmail client on request.
+// Previews a mailto: link, then opens it in the webmail client of your choice.
 
 const mailto = new URLSearchParams(location.search).get('mailto') || '';
 
 const drawer = document.getElementById('drawer');
 const sendMain = document.getElementById('sendMain');
 
-const displayNames = {
-  'gmail': 'Gmail',
-  'outlook': 'Outlook',
-  'yahoo': 'Yahoo Mail',
-  'protonmail': 'ProtonMail'
-};
+let displayNames = {}; // provider labels, sent over by the background worker
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // The background worker already knows how to parse mailto links
-  renderMessage(await chrome.runtime.sendMessage({ type: 'PARSE_MAILTO', mailto }));
-  await initSendButton();
+  // The background worker owns the mailto parsing and the saved profiles
+  const preview = await chrome.runtime.sendMessage({ type: 'PREVIEW_DATA', mailto });
+  displayNames = preview.displayNames;
+
+  renderMessage(preview.data);
+  initSendButton(preview.service, preview.profiles);
+  document.getElementById('closeBtn').addEventListener('click', () => window.close());
 });
 
 function renderMessage(data) {
@@ -39,39 +38,39 @@ function showField(name, value) {
 }
 
 function linkifyURLs(text, container) {
-  for (const part of text.split(/(https?:\/\/[^\s<>()"]+)/g)) {
-    if (!part.startsWith('http')) {
+  // Splitting on a capturing group alternates plain text and matched URLs
+  text.split(/(https?:\/\/[^\s<>()"]+)/).forEach((part, index) => {
+    if (index % 2 === 0) {
       container.append(part);
-      continue;
+      return;
     }
+
     const link = document.createElement('a');
     link.href = part;
     link.textContent = part;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     container.appendChild(link);
-  }
+  });
 }
 
-// Main button opens the default client; the caret opens a drawer of all profiles
-async function initSendButton() {
-  // The background worker already knows the saved profiles and default service
-  const { service, customServices: profiles } = await chrome.runtime.sendMessage({ type: 'GET_SERVICES' });
+// The main button opens the default client; the caret opens a drawer of all of them
+function initSendButton(service, profiles) {
   const selected = profiles[service] ? service : Object.keys(profiles)[0];
 
   document.getElementById('sendLabel').textContent = `Open in ${displayNames[selected] || selected}`;
   sendMain.prepend(providerIcon(profiles[selected]));
+  sendMain.addEventListener('click', () => openIn(selected));
+
   for (const name of Object.keys(profiles)) {
     drawer.appendChild(drawerItem(name, profiles[name], name === selected));
   }
 
-  sendMain.addEventListener('click', () => openIn(selected));
   document.getElementById('sendToggle').addEventListener('click', (event) => {
     event.stopPropagation();
     drawer.classList.toggle('hidden');
   });
   document.addEventListener('click', () => drawer.classList.add('hidden'));
-  document.getElementById('closeBtn').addEventListener('click', () => window.close());
 }
 
 function drawerItem(name, template, isDefault) {
