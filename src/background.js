@@ -10,10 +10,17 @@ const TEMPLATES = {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'MAILTO_CLICK' && message.mailto) {
-    openPreviewWindow(message.mailto);
+    // The preview window can be turned off from the options page
+    chrome.storage.sync.get({ previewEnabled: true }, (data) => {
+      data.previewEnabled ? openPreviewWindow(message.mailto) : handleMailtoClick(message.mailto);
+    });
   }
   if (message.type === 'PARSE_MAILTO' && message.mailto) {
     sendResponse(parseMailtoData(message.mailto));
+  }
+  if (message.type === 'GET_SERVICES') {
+    getSelectedMailService().then(sendResponse);
+    return true; // keep the channel open for the async response
   }
   if (message.type === 'OPEN_COMPOSE' && message.mailto) {
     handleMailtoClick(message.mailto, message.service);

@@ -18,6 +18,15 @@ const defaultProfiles = {
 
 let editingProfile = null;
 
+// Preview window opt-in/out toggle
+const previewToggle = document.getElementById('previewToggle');
+chrome.storage.sync.get({ previewEnabled: true }, (data) => {
+  previewToggle.checked = data.previewEnabled;
+});
+previewToggle.addEventListener('change', () => {
+  chrome.storage.sync.set({ previewEnabled: previewToggle.checked });
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   const data = await chrome.storage.sync.get('profiles');
   let profiles = data.profiles || {};
