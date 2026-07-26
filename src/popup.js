@@ -66,6 +66,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => status.textContent = '', 2000);
   });
 
+  // Preview window is on unless the user opts out
+  const previewToggle = document.getElementById('previewToggle');
+  const { previewEnabled } = await chrome.storage.sync.get({ previewEnabled: true });
+  previewToggle.checked = previewEnabled;
+
+  previewToggle.addEventListener('change', async () => {
+    await chrome.storage.sync.set({ previewEnabled: previewToggle.checked });
+    status.textContent = 'Saved ✓';
+    setTimeout(() => status.textContent = '', 2000);
+  });
+
   // Open Email Profiles (full Options page)
   openProfiles.addEventListener('click', () => {
     if (chrome.runtime.openOptionsPage) {

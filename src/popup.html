@@ -88,6 +88,14 @@
       margin-bottom: 10px;
     }
 
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
     /* === Buttons === */
     button {
       display: block;
@@ -198,8 +206,8 @@
 <body>
   <div class="popup-container">
     <img src="../assets/icon128.png" alt="MailToWith Icon" class="logo" />
-    <h2>MailToWith</h2>
-    <p class="subtitle">MailTo Links PowerUp</p>
+    <h2>MailtoChoose</h2>
+    <p class="subtitle">Customize Mailto Links</p>
     
     <label for="provider" class="label">Default Mail Client</label>
     <select id="provider" class="dropdown">
@@ -208,13 +216,18 @@
       <option value="yahoo">Yahoo Mail</option>
       <option value="protonmail">ProtonMail</option>
     </select>
+    <label class="label checkbox-label">
+      <input type="checkbox" id="previewToggle" />
+      Preview messages before opening
+    </label>
+
     <button id="openOptions" class="btn-outline">Email Profiles</button>
 
     <p id="status" class="status"></p>
     
     <footer>
-      <p>MailToWith v1.2.1</p>Coded with ❤️ by Zaldor & The Bots
-      <a href="https://github.com/Zaldor/MailToWith" target="_blank" rel="noopener noreferrer">Github  </a>
+      <p>MailtoChoose v1.3</p>Made by AaronHarris with credit to Zaldor
+      <a href="https://github.com/AaronHarris/MailtoChoose" target="_blank" rel="noopener noreferrer">Github  </a>
     </footer>
   </div>
 
