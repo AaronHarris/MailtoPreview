@@ -1,6 +1,6 @@
-# 📧 MailtoChoose — Preview `mailto:` Links and Choose Your Webmail Client
+# 📧 MailtoPreview — Preview `mailto:` Links and Choose Your Webmail Client
 
-MailtoChoose is a lightweight Chrome Extension that **intercepts `mailto:` links** on websites, shows you a **preview of the message** before anything is sent, and then opens it in the **webmail client of your choice** — Gmail, Outlook, Yahoo, ProtonMail, or your own — instead of launching the system’s default mail app.
+MailtoPreview is a lightweight Chrome Extension that **intercepts `mailto:` links** on websites, shows you a **preview of the message** before anything is sent, and then opens it in the **webmail client of your choice** — Gmail, Outlook, Yahoo, ProtonMail, or your own — instead of launching the system’s default mail app.
 
 > Formerly **MailToWith**, created by [Zaldor](https://github.com/Zaldor). See [Credits](#-credits).
 
@@ -34,12 +34,12 @@ Prefer the old behaviour? Turn off the preview in the toolbar popup and clicks g
 ### 🧱 Option 1: Developer Mode (Local Installation)
 1. Clone or download this repository:
    ```bash
-   git clone https://github.com/AaronHarris/MailtoChoose.git
+   git clone https://github.com/AaronHarris/MailtoPreview.git
    ```
 2. Go to `chrome://extensions` in your browser.
 3. Enable **Developer mode** (top-right corner).
 4. Click **Load unpacked**.
-5. Select the `MailtoChoose/` directory.
+5. Select the `MailtoPreview/` directory.
 6. The extension will install and become active immediately.
 
 ### 🛍️ Option 2: Chrome Web Store *(Coming Soon)*
@@ -50,7 +50,7 @@ Once published, you will be able to add it directly from the Chrome Web Store.
 ## 🧠 Configuration
 
 ### Open the Options Page:
-1. Right-click the MailtoChoose icon → “Options”, or
+1. Right-click the MailtoPreview icon → “Options”, or
    Go to: `chrome://extensions` → Details → “Extension Options”
 
 ### From the Options UI:
@@ -60,10 +60,10 @@ Once published, you will be able to add it directly from the Chrome Web Store.
   Example:
   https://webmail.myservice.com/compose?to={{to}}&subject={{subject}}&body={{body}}
   ```
-- Click **Save**, and MailtoChoose will remember your choice!
+- Click **Save**, and MailtoPreview will remember your choice!
 
 ### From the Toolbar Popup:
-Click the MailtoChoose icon to pick your **default mail client** and to turn the **preview window** on or off. The default client is the one the preview window’s main button opens, and it is marked `default` in the drawer.
+Click the MailtoPreview icon to pick your **default mail client** and to turn the **preview window** on or off. The default client is the one the preview window’s main button opens, and it is marked `default` in the drawer.
 
 ---
 
@@ -81,7 +81,7 @@ Click the MailtoChoose icon to pick your **default mail client** and to turn the
 ## 🗂️ Project Structure
 
 ```
-MailtoChoose/
+MailtoPreview/
 ├── manifest.json              # Manifest V3 configuration
 ├── src/
 │   ├── background.js          # Handles mailto parsing, preview, & redirect
@@ -127,7 +127,7 @@ Per [RFC 6068](https://www.rfc-editor.org/rfc/rfc6068), `mailto:` bodies are pla
 ## 🧑‍💻 Contributing
 Pull requests are welcome!
 If you’d like to support more mail clients or features, open an issue or PR on GitHub:
-👉 [https://github.com/AaronHarris/MailtoChoose](https://github.com/AaronHarris/MailtoChoose)
+👉 [https://github.com/AaronHarris/MailtoPreview](https://github.com/AaronHarris/MailtoPreview)
 
 ---
 
@@ -139,6 +139,6 @@ Feel free to use, modify, and distribute this project as long as attribution is 
 
 ## 🙏 Credits
 
-MailtoChoose began life as **MailToWith**, created with ❤️ by [Zaldor](https://github.com/Zaldor), whose original work is the foundation this project is built on — the mailto parsing, the webmail profile system, and the extension’s overall design are all his.
+MailtoPreview began life as **MailToWith**, created with ❤️ by [Zaldor](https://github.com/Zaldor), whose original work is the foundation this project is built on — the mailto parsing, the webmail profile system, and the extension’s overall design are all his.
 
 Currently maintained by [AaronHarris](https://github.com/AaronHarris).
